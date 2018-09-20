@@ -1,0 +1,6 @@
+.ipynb_checkpoints/
+__pycache__/
+ckpt/
+logs/
+train_data/
+test_data/
