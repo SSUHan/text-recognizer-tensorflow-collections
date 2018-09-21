@@ -24,6 +24,8 @@ def parse_args():
                         help='Scale value for Reconstructed Loss')
     parser.add_argument('--loss', type=str, default='MSE',
                         help='Scale value for Reconstructed Loss')
+    parser.add_argument('--lr_value', type=float, default=0.001,
+                        help="initial learning rate value")
     parser.add_argument('--lr_method', type=str, default='unchange_decay',
                         help="fix | time_decay | step_decay | unchange_decay")
     parser.add_argument('--lr_decay', type=float, default=0.9,
@@ -91,4 +93,26 @@ def args2json(args):
     with open(osp.join(args.CKPT_DIR, "meta_infomation.json"), 'w+') as fp:
         json.dump(d, fp=fp, indent=2)
     return args
+
+class LR_Generator:
+    def __init__(self, type_name, initial_lr, decay_rate, drop_step=None):
+        self.type_name = type_name # TODO: fix, time_decay, step_decay, clr
+        self.decay_rate = decay_rate
+        self.drop_step = drop_step
+        self.initial_lr = initial_lr
+
+    def get_lr(self, current_lr, current_step=None, unchanged_count=None):
+        if self.type_name == 'fix':
+            return current_lr, False
+        elif self.type_name == 'time_decay':
+            current_lr *= (1. / (1. + self.decay_rate * current_step))
+            return current_lr, False
+        elif self.type_name == 'step_decay':
+            current_lr = self.initial_lr * math.pow(self.decay_rate, (current_step / self.drop_step))
+            return current_lr, False
+        elif self.type_name == 'unchange_decay':
+            if unchanged_count >= params.MAX_UNCHANGED:
+                return current_lr * self.decay_rate, True
+            else:
+                return current_lr, False
 

@@ -10,7 +10,7 @@ class TextRecognizer:
 if __name__ == "__main__":
     args = common.parse_args()
     recog_model = CRNN(args=args)
-    recog_model.build_model(is_debug=True)
+    recog_model.train()
     
     exit(0)
     

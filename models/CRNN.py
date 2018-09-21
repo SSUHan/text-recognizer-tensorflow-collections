@@ -51,7 +51,7 @@ class CRNN(BASE):
         
         return ctc_loss
         
-    def build_model(self, scope="train", is_debug=False):
+    def build_model(self, scope, is_debug=False):
         if scope == "train":
             cnn_out, names = self.encoder(is_training=True, reuse=False)
             self.layers.extend(names)
@@ -76,6 +76,8 @@ class CRNN(BASE):
             return None, predict
     
     def train(self):
-        pass
+        self.train_loss, self.train_predict = self.build_model(scope="train", is_debug=True)
+        self.test_loss, self.test_predict = self.build_model(scope="test", is_debug=False)
+        super()._ready_for_train()
         
         
