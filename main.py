@@ -1,20 +1,18 @@
 import common
 import tensorflow as tf
+from models.CRNN import CRNN
 
-class TextRecognizer():
-    
-    def __del__(self):
-        self.sess.close()
+class TextRecognizer:
     
     def __init__(self, args):
         self.args = args
-        config = tf.ConfigProto()
-        config.gpu_options.allow_growth = True
-        config.allow_soft_placement = True
-        self.sess = tf.Session(config=config)
 
 if __name__ == "__main__":
     args = common.parse_args()
+    recog_model = CRNN(args=args)
+    recog_model.build_model(is_debug=True)
+    
+    exit(0)
     
     with tf.device('/gpu:{}'.format(args.gpu)):
         ocr_recognizer = TextRecognizer(args)
