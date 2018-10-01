@@ -1,6 +1,7 @@
 import tensorflow as tf
 import common
 import os, shutil
+from models.data_loader import RecognizeDataLoader
 
 class BASE(object):
     
@@ -40,6 +41,7 @@ class BASE(object):
         self.lr_generator = common.LR_Generator(type_name=self.args.lr_method,
                                                 initial_lr=self.args.lr_value,
                                                 decay_rate=self.args.lr_decay,
+                                                args=self.args,
                                                 drop_step=self.args.lr_drop_step)
 
         self.lr = tf.placeholder(dtype=tf.float32, name='learning_rate_ph')
@@ -90,7 +92,12 @@ class BASE(object):
             self.step = 0
             self.sess.run(tf.global_variables_initializer())
             self.sess.run(tf.local_variables_initializer())
+        
+        # tensorflow summary logger for tensorboard
+        self.train_writer = tf.summary.FileWriter(os.path.join(self.args.LOG_DIR, self.args.model_name_with_version),
+                                                 self.sess.graph)
             
+        # print configure
         self._print_configures()
     
     def restore_model(self):
@@ -106,6 +113,43 @@ class BASE(object):
             self.step = 0
             self.sess.run(tf.global_variables_initializer())
             self.sess.run(tf.local_variables_initializer())
+    
+    def _get_correct_predict(self, _predict, labels):
+        correct = 0
+        for batch_idx, each_predict in enumerate(_predict):
+            label_str = ""
+            predict_str = ""
+            for seq_idx in range(self.args.SEQ_LENGTH):
+                if labels[batch_idx][seq_idx] == self.voca_c2i[u'None']:
+                    break
+                label_str += self.voca_i2c[labels[batch_idx][seq_idx]]
+            
+            for each_predict_char in each_predict:
+                if each_predict_char == self.voca_c2i[u'None']:
+                    break
+                predict_str += self.voca_i2c[each_predict_char]
+            
+            if predict_str == label_str:
+                correct += 1
+            
+            if batch_idx == 0:
+                print("{} -> {} : ({})".format(predict_str, label_str, predict_str == label_str))
+        return correct
+    
+    def _print_train_interval(self):
+        print("=======================================================")
+        print("train(%s)" % self.args.model_name)
+        print("\tepoch : %03d" % self.epoch)
+        print("\tstep : %07d" % self.step)
+        print("\tlearning rate : %0.7f" % self.lr_value)
+        print("\tloss : %1.2f" % self.train_loss_value)
+        print("\taccuracy : %0.2f" % self.train_accuracy_value)
+        # print("\tlambda_1 : %0.2f" % FLAGS.lambda1)
+        print("\tloss type : %s" % self.args.loss)
+
+        if self.best_valid_accuracy > 0.:
+            print("\tbest valid accuracy : %0.2f" % self.best_valid_accuracy)
+        print("=======================================================")
 
     
     def _print_configures(self):

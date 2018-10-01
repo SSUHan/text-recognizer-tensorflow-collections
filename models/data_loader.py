@@ -40,7 +40,7 @@ class RecognizeDataLoader:
         self.voca_c2i = voca_c2i
 
         # load data
-        with open("{}/{}.pkl".format(self.data_dir, pickle_name)) as f:
+        with open("{}/{}.pkl".format(self.data_dir, pickle_name), 'rb') as f:
             data = pickle.load(f)
         self.data = data
 
@@ -49,7 +49,7 @@ class RecognizeDataLoader:
 
     def init(self):
         self.iteration = 0
-        self.image_paths = self.data.keys()
+        self.image_paths = list(self.data.keys())
         random.shuffle(self.image_paths)
 
     def size(self):
@@ -58,7 +58,7 @@ class RecognizeDataLoader:
     def get_batch(self):
         images = []
         dummy_masks = []
-        labels = []
+        labels = np.zeros([self.args.BATCH_SIZE, self.args.SEQ_LENGTH], np.int32)
 
         idx = 0
         while True:
@@ -82,13 +82,30 @@ class RecognizeDataLoader:
 
             images.append(image)
             annotation = list(self.data[image_path].lower())
-            labels.append(annotation)
-
+            for char_idx, char in enumerate(annotation):
+                labels[idx][char_idx] = self.voca_c2i[char]
+           
             idx += 1
             if idx >= self.args.BATCH_SIZE:
                 break
 
         images = np.array(images)
         dummy_masks = np.zeros_like(images)
-        labels = np.array(labels, dtype=np.int32)
+        # labels = np.array(labels)
         return images, dummy_masks, labels
+
+if __name__ == "__main__":
+    voca_i2c = list("abcdefghijklmnopqrstuvwxyz0123456789")
+    tmp = voca_i2c[0]
+    voca_i2c[0] = 'None'
+    voca_i2c += [tmp, 'SOS']
+    voca_c2i = {c: i for i, c in enumerate(voca_i2c)}
+    
+    # Data
+    train_data = RecognizeDataLoader(voca_i2c=voca_i2c, voca_c2i=voca_c2i, data_dir='train_data/data_recognition_11.6M', pickle_name='train')
+    images, masks, labels = train_data.get_batch()
+    print("images", images.shape)
+    print("masks", masks.shape)
+    print("labels", labels.shape)
+    print("labels[0]", labels[0])
+    print("masks[0]", masks[:, :32])

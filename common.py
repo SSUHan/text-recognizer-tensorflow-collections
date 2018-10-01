@@ -95,11 +95,12 @@ def args2json(args):
     return args
 
 class LR_Generator:
-    def __init__(self, type_name, initial_lr, decay_rate, drop_step=None):
+    def __init__(self, type_name, initial_lr, decay_rate, args, drop_step=None):
         self.type_name = type_name # TODO: fix, time_decay, step_decay, clr
         self.decay_rate = decay_rate
         self.drop_step = drop_step
         self.initial_lr = initial_lr
+        self.args = args
 
     def get_lr(self, current_lr, current_step=None, unchanged_count=None):
         if self.type_name == 'fix':
@@ -111,7 +112,7 @@ class LR_Generator:
             current_lr = self.initial_lr * math.pow(self.decay_rate, (current_step / self.drop_step))
             return current_lr, False
         elif self.type_name == 'unchange_decay':
-            if unchanged_count >= params.MAX_UNCHANGED:
+            if unchanged_count >= self.args.MAX_UNCHANGED:
                 return current_lr * self.decay_rate, True
             else:
                 return current_lr, False
