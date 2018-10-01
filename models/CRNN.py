@@ -84,20 +84,18 @@ class CRNN(BASE):
         super()._ready_for_train()
         
         # train data loader
-        self.train_recognizer_data = RecognizeDataLoader(voca_i2c=self.voca_i2c, voca_c2i=self.voca_c2i, 
+        self.train_recognizer_loader = RecognizeDataLoader(voca_i2c=self.voca_i2c, voca_c2i=self.voca_c2i, 
                                                          data_dir='train_data/data_recognition_11.6M', pickle_name='train', args=self.args)
         
         train_loss = 0.
         train_accuracy = 0.
         self.unchanged_count = 0
-        self.best_valid_loss = 0.
-        self.best_valid_accuracy= 0.
-        self.epoch = int(self.step / self.train_recognizer_data.size())
+        self.epoch = int(self.step / self.train_recognizer_loader.size())
         
         # loop
         while self.epoch < self.args.MAX_EPOCHS:
             start_time = timer()
-            batch = self.train_recognizer_data.get_batch()
+            batch = self.train_recognizer_loader.get_batch()
             if batch is None:
                 self.epoch += 1
                 continue
@@ -106,7 +104,7 @@ class CRNN(BASE):
                 print("Stop minimum learning rate value..")
                 break
             
-            print("Epoch : [ {} ], step : [ {} ], get_batch time : [{0:.2f}], ".format(self.epoch, self.step, timer() - start_time), end='')
+            print("Epoch : [ {} ], step : [ {} ], get_batch time : [{:5.2f}s], ".format(self.epoch, self.step, timer() - start_time), end='')
             images, masks, labels = batch
             
             # get lr value from lr_generator
@@ -127,7 +125,7 @@ class CRNN(BASE):
             # update phrase
             start_time = timer()
             _, _loss, _predict, _summaries = self.sess.run(input_values, feed_dict=feed_dict)
-            print("update time : [{0:.2f}], train_loss : [ {0:.5f} ]".format(timer() - start_time, _loss))
+            print("update time : [{:5.2f}s], train_loss : [ {:10.5f} ] => ".format(timer() - start_time, _loss), end='')
             train_loss += _loss
             correct = super()._get_correct_predict(_predict, labels)
             train_accuracy += 100*float(correct) / float(_predict.shape[0])
@@ -149,9 +147,61 @@ class CRNN(BASE):
             
             # write valid scope log
             if self.step != 0 and self.step % self.args.VALID_INTERVAL == 0:
-                pass
+                super()._print_configures()
+                
+                start_time = timer()
+                for each_testset_name in self.args.testset_names:
+                    test_accuracy = self.recognition_test(each_testset_name)
+                    test_recognizer_loader = self.benchmark_testset_loaders[each_testset_name]
+                    if test_recognizer_loader.best_accuracy < test_accuracy:
+                        test_recognizer_loader.best_accuracy = test_accuracy
+                        ckpt_dir = osp.join(self.args.CKPT_DIR, self.args.model_name_with_version)
+                        self.saver.save(self.sess, "{}/{}".format(ckpt_dir, each_testset_name), global_step=self.step)
+                        self.unchanged_count = 0
+                    else:
+                        self.unchanged_count += 1
             
             self.step += 1
+    
+    
+    def recognition_test(self, testset_name):
+        step = 0
+        correct = 0
+        test_recognizer_loader = self.benchmark_testset_loaders[testset_name]
+        while True:
+            batch = test_recognizer_loader.get_batch()
+            if batch is None:
+                accuracy_value = 100 * float(correct) / (float(self.args.BATCH_SIZE) * step)
+                print("=======================================================")
+                print("recognition test({}) -> {}".format(self.args.model_name, testset_name))
+                print("\tepoch : %03d" % self.epoch)
+                print("\tstep : %07d" % self.step)
+                print("\tlearning rate : %0.7f" % self.lr_value)
+                # print "\tloss : %1.2f(train_loss : %0.2f)" % (loss_value, self.train_loss_value)
+                print("\taccuracy : %0.2f(train_accuracy : %0.2f)" % (accuracy_value, self.train_accuracy_value))
+                print("=======================================================")
+
+                self.train_writer.add_summary(tf.Summary(
+                    value=[
+                        tf.Summary.Value(tag='test/{}/accuracy'.format(testset_name), simple_value=accuracy_value),
+                        # tf.Summary.Value(tag='test/icdar13_1015/ctc_loss', simple_value=loss_value),
+                    ]),
+                    self.step
+                )
+                self.train_writer.add_summary(_summaries, self.step)
+                return accuracy_value
+            
+            print("step in recognition test({}): {}".format(testset_name, step))
+            
+            images, masks, labels = batch
+            input_values = [self.test_predict, self.test_smy_op]
+            feed_dict = {
+                self.images: images,
+                self.labels: labels
+            }
+            _predict, _summaries = self.sess.run(input_values, feed_dict=feed_dict)
+            correct += self._get_correct_predict(_predict, labels)
+            step += 1
             
             
         

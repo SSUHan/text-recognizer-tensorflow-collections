@@ -71,8 +71,8 @@ def check_args(args):
     
     SAVE_DIR_NAME = "recog_11.6M_seg_2.7M"
     
-    args.CKPT_DIR = "ckpt/{}/{}".format(SAVE_DIR_NAME, args.model_name_with_version)
-    args.LOG_DIR = "logs/{}/{}".format(SAVE_DIR_NAME, args.model_name_with_version)
+    args.CKPT_DIR = "ckpt/{}".format(SAVE_DIR_NAME)
+    args.LOG_DIR = "logs/{}".format(SAVE_DIR_NAME)
     if not args.reload:
         if osp.exists(args.CKPT_DIR):
             shutil.rmtree(args.CKPT_DIR, ignore_errors=True)

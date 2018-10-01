@@ -46,6 +46,9 @@ class RecognizeDataLoader:
 
         # initialize
         self.init()
+        
+        # best accuracy score for this dataset
+        self.best_accuracy = 0.
 
     def init(self):
         self.iteration = 0

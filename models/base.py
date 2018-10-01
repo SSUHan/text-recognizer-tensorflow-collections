@@ -50,6 +50,10 @@ class BASE(object):
         # summary operation list
         self.train_smy_op = []
         self.test_smy_op = []
+        
+        # benchmark testset loaders
+        self.benchmark_testset_loaders = {}
+        self.set_benchmark_testset_loader()
     
     def _ready_for_train(self):
         # set lr optimizer
@@ -133,8 +137,23 @@ class BASE(object):
                 correct += 1
             
             if batch_idx == 0:
-                print("{} -> {} : ({})".format(predict_str, label_str, predict_str == label_str))
+                print("pred({}) -> gt({}) : ({})".format(predict_str, label_str, predict_str == label_str))
         return correct
+    
+    def set_benchmark_testset_loader(self):
+        if "ic13_857" in self.args.testset_names:
+            self.benchmark_testset_loaders["ic13_857"] = RecognizeDataLoader(voca_i2c=self.voca_i2c, voca_c2i=self.voca_c2i, 
+                                                                             data_dir='test_data/IC13', pickle_name='ic13_857', args=self.args)
+        if "ic13_1015" in self.args.testset_names:
+            self.benchmark_testset_loaders["ic13_1015"] = RecognizeDataLoader(voca_i2c=self.voca_i2c, voca_c2i=self.voca_c2i, 
+                                                                             data_dir='test_data/IC13', pickle_name='ic13_1015', args=self.args)
+        if "ic03_867" in self.args.testset_names:
+            self.benchmark_testset_loaders["ic03_867"] = RecognizeDataLoader(voca_i2c=self.voca_i2c, voca_c2i=self.voca_c2i, 
+                                                                             data_dir='test_data/IC03', pickle_name='ic03_867', args=self.args)
+        if "ic03_all" in self.args.testset_names:
+            self.benchmark_testset_loaders["ic03_all"] = RecognizeDataLoader(voca_i2c=self.voca_i2c, voca_c2i=self.voca_c2i, 
+                                                                             data_dir='test_data/IC03', pickle_name='ic03_all', args=self.args)
+        
     
     def _print_train_interval(self):
         print("=======================================================")
@@ -147,8 +166,8 @@ class BASE(object):
         # print("\tlambda_1 : %0.2f" % FLAGS.lambda1)
         print("\tloss type : %s" % self.args.loss)
 
-        if self.best_valid_accuracy > 0.:
-            print("\tbest valid accuracy : %0.2f" % self.best_valid_accuracy)
+        # if self.best_valid_accuracy > 0.:
+        #    print("\tbest valid accuracy : %0.2f" % self.best_valid_accuracy)
         print("=======================================================")
 
     
