@@ -92,7 +92,7 @@ class BASE(object):
             ckpt_dir = os.path.join(self.args.CKPT_DIR, self.args.model_name_with_version)
             if os.path.exists(ckpt_dir):
                 shutil.rmtree(ckpt_dir, ignore_errors=True)
-            os.makedirs(ckpt_dir)
+            # os.makedirs(ckpt_dir)
             self.step = 0
             self.sess.run(tf.global_variables_initializer())
             self.sess.run(tf.local_variables_initializer())

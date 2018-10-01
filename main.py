@@ -27,8 +27,6 @@ if __name__ == "__main__":
             pass
         elif args.operating_mode == 'infer':
             pass
-        pass
-    
-    common.args2json(args)
+        
     
     

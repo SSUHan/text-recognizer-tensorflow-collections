@@ -74,15 +74,17 @@ def check_args(args):
     args.CKPT_DIR = "ckpt/{}".format(SAVE_DIR_NAME)
     args.LOG_DIR = "logs/{}".format(SAVE_DIR_NAME)
     if not args.reload:
-        if osp.exists(args.CKPT_DIR):
-            shutil.rmtree(args.CKPT_DIR, ignore_errors=True)
+        ckpt_dir = osp.join(args.CKPT_DIR, args.model_name_with_version)
+        if osp.exists(ckpt_dir):
+            shutil.rmtree(ckpt_dir, ignore_errors=True)
         else:
-            os.makedirs(args.CKPT_DIR)
+            os.makedirs(ckpt_dir)
         
-        if osp.exists(args.LOG_DIR):
-            shutil.rmtree(args.LOG_DIR, ignore_errors=True)
+        log_dir = osp.join(args.LOG_DIR, args.model_name_with_version)
+        if osp.exists(log_dir):
+            shutil.rmtree(log_dir, ignore_errors=True)
         else:
-            os.makedirs(args.LOG_DIR)
+            os.makedirs(log_dir)
             
     args.DEBUG_DIR = "debug"
     
@@ -90,7 +92,7 @@ def check_args(args):
 
 def args2json(args):
     d = vars(args)
-    with open(osp.join(args.CKPT_DIR, "meta_infomation.json"), 'w+') as fp:
+    with open(osp.join(args.CKPT_DIR, args.model_name_with_version, "meta_infomation.json"), 'w+') as fp:
         json.dump(d, fp=fp, indent=2)
     return args
 

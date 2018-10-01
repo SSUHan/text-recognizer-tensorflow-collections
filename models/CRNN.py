@@ -1,9 +1,12 @@
 import tensorflow as tf
+import os.path as osp
+
 from models.base import BASE
 from models.encoder_backbone import crnn_encoder
 from models.decoder_backbone import normal_bilstm, ctc_based_decoder
 from models.data_loader import RecognizeDataLoader
 from pprint import pprint
+import common
 
 from timeit import default_timer as timer
 
@@ -157,6 +160,7 @@ class CRNN(BASE):
                         test_recognizer_loader.best_accuracy = test_accuracy
                         ckpt_dir = osp.join(self.args.CKPT_DIR, self.args.model_name_with_version)
                         self.saver.save(self.sess, "{}/{}".format(ckpt_dir, each_testset_name), global_step=self.step)
+                        common.args2json(self.args)
                         self.unchanged_count = 0
                     else:
                         self.unchanged_count += 1
