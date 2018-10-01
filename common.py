@@ -8,7 +8,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument('--version', type=int, default=1,
                         help='version for this model')
-    parser.add_argument('--model_name', type=str, default='UNet',
+    parser.add_argument('--model_name', type=str, default='CRNN',
                         help='model name for using')
     parser.add_argument('--reload', action='store_true', dest='reload', default=False,
                         help='reload model from past state')

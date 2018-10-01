@@ -1,6 +1,6 @@
 import tensorflow as tf
 import common
-import os
+import os, shutil
 
 class BASE(object):
     
@@ -61,7 +61,7 @@ class BASE(object):
             elif self.args.optimizer == "SGD":
                 self.optimizer = tf.train.GradientDescentOptimizer(self.lr)
             else:
-                print("Cloudn't find %s optimizer" % FLAGS.optimizer)
+                print("Cloudn't find %s optimizer" % self.args.optimizer)
                 exit(1)
 
             self.optim = self.optimizer.minimize(self.train_loss)

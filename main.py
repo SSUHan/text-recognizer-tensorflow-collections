@@ -9,8 +9,10 @@ class TextRecognizer:
 
 if __name__ == "__main__":
     args = common.parse_args()
-    recog_model = CRNN(args=args)
-    recog_model.train()
+
+    if args.model_name == 'CRNN':
+        recog_model = CRNN(args=args)
+        recog_model.train()
     
     exit(0)
     

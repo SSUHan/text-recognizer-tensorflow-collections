@@ -4,3 +4,4 @@ ckpt/
 logs/
 train_data/
 test_data/
+.idea/
