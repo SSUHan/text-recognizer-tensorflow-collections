@@ -58,13 +58,13 @@ class BASE(object):
     def _ready_for_train(self):
         # set lr optimizer
         with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
-            if self.args.optimizer == 'Adam':
+            if self.args.optimizer.lower() == 'Adam'.lower():
                 self.optimizer = tf.train.AdamOptimizer(self.lr)
-            elif self.args.optimizer == "Adadelta":
+            elif self.args.optimizer.lower() == "Adadelta".lower():
                 self.optimizer = tf.train.AdadeltaOptimizer(self.lr)
-            elif self.args.optimizer == "RMSProp":
+            elif self.args.optimizer.lower() == "RMSProp".lower():
                 self.optimizer = tf.train.RMSPropOptimizer(self.lr)
-            elif self.args.optimizer == "SGD":
+            elif self.args.optimizer.lower() == "SGD".lower():
                 self.optimizer = tf.train.GradientDescentOptimizer(self.lr)
             else:
                 print("Cloudn't find %s optimizer" % self.args.optimizer)
