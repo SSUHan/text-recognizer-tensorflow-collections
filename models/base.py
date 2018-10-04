@@ -1,4 +1,6 @@
 import tensorflow as tf
+import tensorflow.contrib.slim as slim
+
 import common
 import os, shutil
 from models.data_loader import RecognizeDataLoader
@@ -188,3 +190,8 @@ class BASE(object):
         print("lambda1 value : %f" % self.args.lambda1)
         print("loss type : %s" % self.args.loss)
         print("=======================================================")
+    
+    def _show_all_variables(self):
+        model_vars = tf.trainable_variables()
+        slim.model_analyzer.analyze_vars(model_vars, print_info=True)
+        

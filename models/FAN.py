@@ -89,6 +89,8 @@ class FAN(BASE):
         
         elif scope == "test":
             cnn_out, names = self.encoder(is_training=False, reuse=True)
+            if is_debug:
+                pprint(names)
             
             if self.args.loss == "ctc":
                 logits, predict, seq_length, confidence, names = self.decoder(cnn_out, is_training=False, reuse=True)
@@ -100,6 +102,9 @@ class FAN(BASE):
                 print("Unkown loss type.. {}".format(self.args.loss))
                 exit(0)
             
+            if is_debug:
+                pprint(names)
+            
             return loss, predict
         
         elif scope == "infer":
@@ -109,7 +114,8 @@ class FAN(BASE):
     
     def train(self):
         self.train_loss, self.train_predict = self.build_model(scope="train", is_debug=True)
-        self.test_loss, self.test_predict = self.build_model(scope="test", is_debug=False)
+        self.test_loss, self.test_predict = self.build_model(scope="test", is_debug=True)
+        super()._show_all_variables()
         super()._ready_for_train()
         
         # train data loader

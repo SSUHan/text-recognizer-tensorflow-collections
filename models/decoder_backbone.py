@@ -27,10 +27,10 @@ def ctc_based_decoder(input_features, args, voca_c2i, is_training, reuse=False):
 
     return logits, predict, seq_length, confidence
 
-def attention_based_decoder_with_loss(input_features, labels, args, voca_c2i, is_training=True, reuse=False):
-    input_features = tf.transpose(input_features, perm=[1, 0, 2])
-    CNN_WIDTH = int(input_features.shape[1])
-    CNN_CHANNELS = int(input_features.shape[2])
+def attention_based_decoder_with_loss(cnn_features, labels, args, voca_c2i, is_training=True, reuse=False):
+    cnn_features = tf.transpose(cnn_features, perm=[1, 0, 2])
+    CNN_WIDTH = int(cnn_features.shape[1])
+    CNN_CHANNELS = int(cnn_features.shape[2])
 
     predict = []
     confidence = []
@@ -41,7 +41,7 @@ def attention_based_decoder_with_loss(input_features, labels, args, voca_c2i, is
     bias_initializer = tf.constant_initializer(value=0.0)
 
     with tf.variable_scope("attention", reuse=reuse):
-        reduced_cnn_features = tf.reshape(tf.reduce_mean(input_features, axis=2), [-1, CNN_WIDTH])
+        reduced_cnn_features = tf.reshape(tf.reduce_mean(cnn_features, axis=2), [-1, CNN_WIDTH])
         Wc = tf.get_variable(name="char_embedding",
                              shape=[len(voca_c2i.keys()), args.RNN_HIDDEN_SIZE],
                             initializer=truncated_initializer,
@@ -115,7 +115,7 @@ def attention_based_decoder_with_loss(input_features, labels, args, voca_c2i, is
             attention = tf.nn.softmax(
                 Wa * tf.tanh(tf.matmul(lstm_state[0], Ws) + Bs + tf.matmul(reduced_cnn_features, Wf) + Bf))
             attention_mask.append(tf.reshape(attention, [-1, CNN_WIDTH]))
-            context = tf.reduce_sum(tf.expand_dims(attention, 2) * input_features, 1)
+            context = tf.reduce_sum(tf.expand_dims(attention, 2) * cnn_features, 1)
             lstm_input = char_embedding + tf.matmul(context, Wi1) + Bi1
             lstm_output, lstm_state = lstm_cell(inputs=lstm_input, state=lstm_state)
             lstm_output = tf.matmul(lstm_output, Wo) + Bo + tf.matmul(context, Wi2) + Bi2
