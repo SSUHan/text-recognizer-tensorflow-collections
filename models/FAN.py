@@ -68,6 +68,7 @@ class FAN(BASE):
         
     def build_model(self, scope, is_debug=False):
         if scope == "train":
+            print("build model for train scope..")
             cnn_out, names = self.encoder(is_training=True, reuse=False) 
             self.layers.extend(names)
             
@@ -88,6 +89,7 @@ class FAN(BASE):
             return loss, predict
         
         elif scope == "test":
+            print("build model for test scope")
             cnn_out, names = self.encoder(is_training=False, reuse=True)
             if is_debug:
                 pprint(names)

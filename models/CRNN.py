@@ -3,7 +3,7 @@ import os.path as osp
 
 from models.base import BASE
 from models.encoder_backbone import crnn_encoder
-from models.decoder_backbone import normal_bilstm, ctc_based_decoder
+from models.decoder_backbone import normal_bilstm, ctc_based_decoder, attention_based_decoder_with_loss
 from models.data_loader import RecognizeDataLoader
 from pprint import pprint
 import common
@@ -30,13 +30,22 @@ class CRNN(BASE):
         with tf.variable_scope('rnn_decoder', reuse=reuse):
             rnn_out, names = normal_bilstm(cnn_out, self.args, is_training=is_training, reuse=reuse)
         
-        with tf.variable_scope('ctc_decoder', reuse=reuse):
-            logits, predict, seq_length, confidence = ctc_based_decoder(rnn_out, self.args, self.voca_c2i,
-                                                                        is_training=is_training, reuse=reuse)
+        if self.args.loss == 'ctc':
+            with tf.variable_scope('ctc_decoder', reuse=reuse):
+                logits, predict, seq_length, confidence = ctc_based_decoder(rnn_out, self.args, self.voca_c2i,
+                                                                            is_training=is_training, reuse=reuse)
+
+            return logits, predict, seq_length, confidence, names
+        elif self.args.loss == 'attention':
+            with tf.variable_scope('attention_decoder', reuse=reuse):
+                loss, predict, confidence, attention_mask = attention_based_decoder_with_loss(rnn_out, labels=self.labels, args=self.args, 
+                                                                                              voca_c2i=self.voca_c2i, is_training=is_training, reuse=reuse)
+            return loss, predict, names
+        else:
+            print("Unkown loss type.. {}".format(self.args.loss))
+            exit(0)
         
-        return logits, predict, seq_length, confidence, names
-        
-    def get_loss(self, logits, labels, seq_length, scope="train"):
+    def get_ctc_loss(self, logits, labels, seq_length, scope="train"):
         # convert labels from dense to sparse
         indices = tf.where(tf.not_equal(labels, self.voca_c2i[u'None']))
         labels = tf.reshape(labels, [self.args.BATCH_SIZE, self.args.SEQ_LENGTH])
@@ -59,26 +68,45 @@ class CRNN(BASE):
         
     def build_model(self, scope, is_debug=False):
         if scope == "train":
-            cnn_out, names = self.encoder(is_training=True, reuse=False)
+            print("build model for train scope..")
+            cnn_out, names = self.encoder(is_training=True, reuse=False) 
             self.layers.extend(names)
-            logits, predict, seq_length, confidence, names = self.decoder(cnn_out, is_training=True, reuse=False)
-            self.layers.extend(names)
-            loss = self.get_loss(logits, self.labels, seq_length, scope=scope)
             
+            if self.args.loss == "ctc":
+                logits, predict, seq_length, confidence, names = self.decoder(cnn_out, is_training=True, reuse=False)
+                loss = self.get_ctc_loss(logits, self.labels, seq_length, scope=scope)
+            elif self.args.loss == "attention":
+                loss, predict, names = self.decoder(cnn_out, is_training=True, reuse=False)
+                self.train_smy_op.append(tf.summary.scalar("{}/attention_loss".format(scope), loss))
+            else:
+                print("Unkown loss type.. {}".format(self.args.loss))
+                exit(0)
+            
+            self.layers.extend(names)
             if is_debug:
                 pprint(self.layers)
             
             return loss, predict
         
         elif scope == "test":
+            print("build model for test scope")
             cnn_out, names = self.encoder(is_training=False, reuse=True)
             if is_debug:
                 pprint(names)
             
-            logits, predict, seq_length, confidence, names = self.decoder(cnn_out, is_training=False, reuse=True)
+            if self.args.loss == "ctc":
+                logits, predict, seq_length, confidence, names = self.decoder(cnn_out, is_training=False, reuse=True)
+                loss = self.get_ctc_loss(logits, self.labels, seq_length, scope=scope)
+            elif self.args.loss == "attention":
+                loss, predict, names = self.decoder(cnn_out, is_training=False, reuse=True)
+                self.test_smy_op.append(tf.summary.scalar("{}/attention_loss".format(scope), loss))
+            else:
+                print("Unkown loss type.. {}".format(self.args.loss))
+                exit(0)
+            
             if is_debug:
                 pprint(names)
-            loss = self.get_loss(logits, self.labels, seq_length, scope=scope)
+            
             return loss, predict
         
         elif scope == "infer":
