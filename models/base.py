@@ -1,4 +1,6 @@
 import tensorflow as tf
+import tensorflow.contrib.slim as slim
+
 import common
 import os, shutil
 from models.data_loader import RecognizeDataLoader
@@ -58,13 +60,13 @@ class BASE(object):
     def _ready_for_train(self):
         # set lr optimizer
         with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
-            if self.args.optimizer == 'Adam':
+            if self.args.optimizer.lower() == 'Adam'.lower():
                 self.optimizer = tf.train.AdamOptimizer(self.lr)
-            elif self.args.optimizer == "Adadelta":
+            elif self.args.optimizer.lower() == "Adadelta".lower():
                 self.optimizer = tf.train.AdadeltaOptimizer(self.lr)
-            elif self.args.optimizer == "RMSProp":
+            elif self.args.optimizer.lower() == "RMSProp".lower():
                 self.optimizer = tf.train.RMSPropOptimizer(self.lr)
-            elif self.args.optimizer == "SGD":
+            elif self.args.optimizer.lower() == "SGD".lower():
                 self.optimizer = tf.train.GradientDescentOptimizer(self.lr)
             else:
                 print("Cloudn't find %s optimizer" % self.args.optimizer)
@@ -188,3 +190,8 @@ class BASE(object):
         print("lambda1 value : %f" % self.args.lambda1)
         print("loss type : %s" % self.args.loss)
         print("=======================================================")
+    
+    def _show_all_variables(self):
+        model_vars = tf.trainable_variables()
+        slim.model_analyzer.analyze_vars(model_vars, print_info=True)
+        
